@@ -23,6 +23,19 @@ type Article struct {
 var app = pocketbase.New()
 
 func main() {
+	log.Println("server start")
+	staticDir := http.Dir("./public")
+	fileServer := http.FileServer(staticDir)
+	http.Handle("/", fileServer)
+	go func() {
+		err := http.ListenAndServe(":3000", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	log.Println("server start2")
+
 	// serves static files from the provided public dir (if exists)
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS("./pb_public"), false))
@@ -32,6 +45,7 @@ func main() {
 		e.Router.GET("/article", getArticleList, apis.ActivityLogger(app))
 		e.Router.POST("/article", postArticle, apis.ActivityLogger(app))
 		e.Router.PUT("/article", updateArticle, apis.ActivityLogger(app))
+		e.Router.DELETE("/article", deleteArticle, apis.ActivityLogger(app))
 		return nil
 	})
 
@@ -71,7 +85,7 @@ func postArticle(c echo.Context) error {
 	if err := form.Submit(); err != nil {
 		return err
 	}
-	return c.JSON(200, record)
+	return c.JSON(http.StatusOK, record)
 }
 func updateArticle(c echo.Context) error {
 	data := Article{}
@@ -93,5 +107,20 @@ func updateArticle(c echo.Context) error {
 	if err := form.Submit(); err != nil {
 		return err
 	}
-	return c.JSON(200, record)
+	return c.JSON(http.StatusOK, record)
+}
+func deleteArticle(c echo.Context) error {
+	data := Article{}
+	if err := c.Bind(&data); err != nil {
+		return apis.NewBadRequestError("Failed to read request data", err)
+	}
+
+	record, err := app.Dao().FindRecordById("article", data.Id)
+	if err != nil {
+		return err
+	}
+	if err := app.Dao().DeleteRecord(record); err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, nil)
 }
