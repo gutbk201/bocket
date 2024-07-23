@@ -1,0 +1,14 @@
+curl \
+-H 'Content-Type: application/json' \
+-X POST localhost:8090/article \
+--data '{"title":"good morning", "content":"shiny day", "author":"me"}'
+
+curl \
+-H 'Content-Type: application/json' \
+-X PUT localhost:8090/article \
+--data '{"id":"yhih58qnucy1fnj", "title":"good evening", "content":"rainy day", "author":"me"}'
+
+curl \
+-H 'Content-Type: application/json' \
+-X DELETE localhost:8090/article \
+--data '{"id":"cwqrqwcnmds1oba"}'
